@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# ffmpeg -i test.avi -acodec pcm_s16le normalized.wav
+# normalize normalized.wav
+# ffmpeg -i test.avi -i normalized.wav -map 0:0 -map 1:0 -vcodec copy -acodec copy new_test.avi
+
+if [ $# -lt 2 ]; then
+  echo "usage: reencode <input> <output>"
+  exit 1
+fi
+
+# Extrae Audio
+ffmpeg -i $1 -acodec pcm_s16le -vn -y audio.wav
+
+# Normaliza Audio
+normalize-audio -a -9dBFS audio.wav
+
+# Encode
+ffmpeg -threads 8 \
+  -i $1 \
+  -i audio.wav \
+  -f mov \
+  -vcodec libx264 -vpre lossless_max \
+  -acodec ac3 \
+  -y $2 \
+  -map 0.1 -map 1.0
